@@ -28,10 +28,16 @@ resource "aws_instance" "server-1" {
   #user_data = "${file("../../tmp/aws/userdata.sh")}"
   user_data                   = <<EOF
 <powershell>
+#https://docs.ansible.com/ansible/latest/user_guide/windows_setup.html
+$url = "https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"
+$file = "$env:temp\ConfigureRemotingForAnsible.ps1"
+(New-Object -TypeName System.Net.WebClient).DownloadFile($url, $file)
+powershell.exe -ExecutionPolicy ByPass -File $file
+
 Start-Job -name "copys3" -ScriptBlock { Copy-S3Object -Region us-east-1 -BucketName ec2-launch  -Key terraform/bootstrap/scripts/setup_new_ec2_at_launch.ps1 -LocalFolder c:\Windows\temp -force }
 Wait-Job -name "copys3"
 
 C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File 'C:\Windows\Temp\terraform\bootstrap\scripts\setup_new_ec2_at_launch.ps1'
-</powershell>
+</powershell>  
 EOF
 }
